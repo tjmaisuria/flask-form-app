@@ -2,14 +2,20 @@ from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 import os
 
+# -----------------------
+# App and Database Setup
+# -----------------------
 app = Flask(__name__)
 
-# Database configuration
+# Get database URL from Render environment variable
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
-# Define your table
+# -----------------------
+# Database Model
+# -----------------------
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     firstname = db.Column(db.String(100))
@@ -17,10 +23,13 @@ class User(db.Model):
     email = db.Column(db.String(120))
     address = db.Column(db.String(200))
 
-# ✅ Create tables at startup (Flask 3.0+ compatible)
+# Create tables at startup (Flask 3.x compatible)
 with app.app_context():
     db.create_all()
 
+# -----------------------
+# Routes
+# -----------------------
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -50,10 +59,10 @@ def thankyou():
 @app.route("/view")
 def view():
     users = User.query.all()
-    return {"users": [
-        {"firstname": u.firstname, "lastname": u.lastname, "email": u.email, "address": u.address}
-        for u in users
-    ]}
+    return render_template("view.html", users=users)
 
+# -----------------------
+# Run the App
+# -----------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
