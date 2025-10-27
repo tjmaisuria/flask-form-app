@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 import os
+import pandas as pd
+from flask import send_file
+import io
 
 # -----------------------
 # App and Database Setup
@@ -62,7 +65,33 @@ def view():
     return render_template("view.html", users=users)
 
 # -----------------------
+
+@app.route("/export")
+def export():
+    # Get all users from database
+    users = User.query.all()
+
+    # Convert to list of dicts
+    data = [{
+        "First Name": u.firstname,
+        "Last Name": u.lastname,
+        "Email": u.email,
+        "Address": u.address
+    } for u in users]
+
+    # Create DataFrame
+    df = pd.DataFrame(data)
+
+    # Write to Excel in memory
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name="Users")
+    output.seek(0)
+
+    # Send file to user
+    return send_file(output, download_name="users.xlsx", as_attachment=True)
 # Run the App
 # -----------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
