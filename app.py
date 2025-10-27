@@ -1,21 +1,28 @@
 from flask import Flask, render_template, request, redirect, url_for
-import psycopg2
+from flask_sqlalchemy import SQLAlchemy
 import os
 
 app = Flask(__name__)
 
-# --------------------------------------------
-# Database connection (Render provides DATABASE_URL)
-# --------------------------------------------
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Get the database URL from environment variables
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-    return conn
+db = SQLAlchemy(app)
 
-# --------------------------------------------
-# Routes
-# --------------------------------------------
+# Define a User model (table)
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    firstname = db.Column(db.String(100))
+    lastname = db.Column(db.String(100))
+    email = db.Column(db.String(120))
+    address = db.Column(db.String(200))
+
+# Automatically create tables before first request
+@app.before_first_request
+def create_tables():
+    db.create_all()
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -27,15 +34,14 @@ def submit():
     email = request.form.get("email")
     address = request.form.get("address")
 
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO users (first_name, last_name, email, address) VALUES (%s, %s, %s, %s)",
-        (firstname, lastname, email, address),
+    new_user = User(
+        firstname=firstname,
+        lastname=lastname,
+        email=email,
+        address=address
     )
-    conn.commit()
-    cur.close()
-    conn.close()
+    db.session.add(new_user)
+    db.session.commit()
 
     return redirect(url_for("thankyou"))
 
@@ -45,13 +51,11 @@ def thankyou():
 
 @app.route("/view")
 def view():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT first_name, last_name, email, address FROM users;")
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return {"users": rows}
+    users = User.query.all()
+    return {"users": [
+        {"firstname": u.firstname, "lastname": u.lastname, "email": u.email, "address": u.address}
+        for u in users
+    ]}
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
