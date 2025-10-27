@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>User Info Form</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Enter Your Details</h1>
+    <form action="/submit" method="POST">
+      <label>First Name</label>
+      <input type="text" name="firstname" required>
+
+      <label>Last Name</label>
+      <input type="text" name="lastname" required>
+
+      <label>Email</label>
+      <input type="email" name="email" required>
+
+      <label>Address</label>
+      <textarea name="address" required></textarea>
+
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+</body>
+</html>
