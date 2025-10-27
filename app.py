@@ -4,13 +4,12 @@ import os
 
 app = Flask(__name__)
 
-# Get the database URL from environment variables
+# Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 db = SQLAlchemy(app)
 
-# Define a User model (table)
+# Define your table
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     firstname = db.Column(db.String(100))
@@ -18,9 +17,8 @@ class User(db.Model):
     email = db.Column(db.String(120))
     address = db.Column(db.String(200))
 
-# Automatically create tables before first request
-@app.before_first_request
-def create_tables():
+# ✅ Create tables at startup (Flask 3.0+ compatible)
+with app.app_context():
     db.create_all()
 
 @app.route("/")
