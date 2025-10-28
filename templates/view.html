@@ -1,29 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>View Submissions</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>All Users</title>
 </head>
 <body>
-    <h1>All Submissions</h1>
-    <table border="1" cellpadding="5" cellspacing="0">
+    <h2>All Users</h2>
+    <a href="/">Add New</a> | 
+    <a href="/search">Search</a> | 
+    <a href="/export">Export to Excel</a>
+
+    {% if users %}
+    <table border="1">
         <tr>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>Email</th>
-            <th>Address</th>
+            <th>First Name</th><th>Last Name</th><th>Email</th><th>Address</th>
         </tr>
         {% for user in users %}
         <tr>
-            <td>{{ user.firstname }}</td>
-            <td>{{ user.lastname }}</td>
+            <td>{{ user.first_name }}</td>
+            <td>{{ user.last_name }}</td>
             <td>{{ user.email }}</td>
             <td>{{ user.address }}</td>
         </tr>
         {% endfor %}
     </table>
-    <br>
-    <a href="/"><button>Back to Form</button></a>
+    {% else %}
+    <p>No records found.</p>
+    {% endif %}
 </body>
 </html>
