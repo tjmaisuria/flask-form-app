@@ -1,97 +1,98 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, send_file
 from flask_sqlalchemy import SQLAlchemy
 import os
 import pandas as pd
-from flask import send_file
-import io
+from io import BytesIO
 
-# -----------------------
-# App and Database Setup
-# -----------------------
 app = Flask(__name__)
 
-# Get database URL from Render environment variable
+# ---------------------
+# DATABASE CONFIG
+# ---------------------
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# -----------------------
-# Database Model
-# -----------------------
+# ---------------------
+# DATABASE MODEL
+# ---------------------
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    firstname = db.Column(db.String(100))
-    lastname = db.Column(db.String(100))
-    email = db.Column(db.String(120))
-    address = db.Column(db.String(200))
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    address = db.Column(db.String(255), nullable=False)
 
-# Create tables at startup (Flask 3.x compatible)
+# Ensure tables exist
 with app.app_context():
     db.create_all()
 
-# -----------------------
-# Routes
-# -----------------------
-@app.route("/")
+# ---------------------
+# ROUTES
+# ---------------------
+
+@app.route('/')
 def index():
-    return render_template("index.html")
+    return render_template('index.html')
 
-@app.route("/submit", methods=["POST"])
+
+@app.route('/submit', methods=['POST'])
 def submit():
-    firstname = request.form.get("firstname")
-    lastname = request.form.get("lastname")
-    email = request.form.get("email")
-    address = request.form.get("address")
+    first_name = request.form.get('first_name')
+    last_name = request.form.get('last_name')
+    email = request.form.get('email')
+    address = request.form.get('address')
 
-    new_user = User(
-        firstname=firstname,
-        lastname=lastname,
-        email=email,
-        address=address
-    )
-    db.session.add(new_user)
+    if not (first_name and last_name and email and address):
+        return "All fields are required!", 400
+
+    user = User(first_name=first_name, last_name=last_name, email=email, address=address)
+    db.session.add(user)
     db.session.commit()
 
-    return redirect(url_for("thankyou"))
+    return redirect('/view')
 
-@app.route("/thankyou")
-def thankyou():
-    return "<h2>Thank you! Your info has been saved successfully.</h2>"
 
-@app.route("/view")
+@app.route('/view')
 def view():
     users = User.query.all()
-    return render_template("view.html", users=users)
+    return render_template('view.html', users=users)
 
-# -----------------------
 
-@app.route("/export")
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    results = []
+    keyword = ''
+    if request.method == 'POST':
+        keyword = request.form.get('keyword', '').strip()
+        if keyword:
+            results = User.query.filter(
+                (User.first_name.ilike(f"%{keyword}%")) |
+                (User.last_name.ilike(f"%{keyword}%")) |
+                (User.email.ilike(f"%{keyword}%")) |
+                (User.address.ilike(f"%{keyword}%"))
+            ).all()
+    return render_template('search_results.html', users=results, keyword=keyword)
+
+
+@app.route('/export')
 def export():
-    # Get all users from database
     users = User.query.all()
-
-    # Convert to list of dicts
     data = [{
-        "First Name": u.firstname,
-        "Last Name": u.lastname,
+        "First Name": u.first_name,
+        "Last Name": u.last_name,
         "Email": u.email,
         "Address": u.address
     } for u in users]
 
-    # Create DataFrame
     df = pd.DataFrame(data)
-
-    # Write to Excel in memory
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name="Users")
+    output = BytesIO()
+    df.to_excel(output, index=False)
     output.seek(0)
 
-    # Send file to user
-    return send_file(output, download_name="users.xlsx", as_attachment=True)
-# Run the App
-# -----------------------
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    return send_file(output, download_name="user_data.xlsx", as_attachment=True)
 
+
+if __name__ == '__main__':
+    app.run(debug=True)
