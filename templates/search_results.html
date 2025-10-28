@@ -1,14 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>All Users</title>
+    <title>Search Results</title>
 </head>
 <body>
-    <h2>All Users</h2>
-    <a href="/">Add New</a> | 
-    <a href="/search">Search</a> | 
-    <a href="/export">Export to Excel</a>
-
+    <h2>Results for "{{ keyword }}"</h2>
     {% if users %}
     <table border="1">
         <tr>
@@ -24,7 +20,8 @@
         {% endfor %}
     </table>
     {% else %}
-    <p>No records found.</p>
+    <p>No matching records found.</p>
     {% endif %}
+    <a href="/view">Back to View All</a>
 </body>
 </html>
