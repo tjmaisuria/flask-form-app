@@ -1,26 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Search Users</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Search Users</title>
 </head>
 <body>
-  <h2>Search Users</h2>
-  <form method="POST" action="/search">
-    <input type="text" name="search" placeholder="Enter name" required>
-    <button type="submit">Search</button>
-  </form>
-
-  {% if results %}
-    <h3>Results:</h3>
-    <ul>
-      {% for user in results %}
-        <li>{{ user[0] }} {{ user[1] }} - {{ user[2] }} - {{ user[3] }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-
-  <a href="/">Back to Home</a>
+    <h2>Search Users</h2>
+    <form method="POST" action="/search">
+        <input type="text" name="keyword" placeholder="Enter name, email or address" required>
+        <button type="submit">Search</button>
+    </form>
 </body>
 </html>
