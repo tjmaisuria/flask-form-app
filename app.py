@@ -59,10 +59,22 @@ def submit():
 def thankyou():
     return "<h2>Thank you! Your info has been saved successfully.</h2>"
 
-@app.route("/view")
-def view():
-    users = User.query.all()
-    return render_template("view.html", users=users)
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    results = []
+    if request.method == "POST":
+        search_query = request.form.get("search", "").lower()
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        cur.execute("SELECT first_name, last_name, email, address FROM users")
+        all_users = cur.fetchall()
+        conn.close()
+        
+        # Filter results by search query
+        results = [user for user in all_users if search_query in user[0].lower() or search_query in user[1].lower()]
+    
+    return render_template("search.html", results=results)
+
 
 # -----------------------
 
@@ -94,4 +106,5 @@ def export():
 # -----------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
 
